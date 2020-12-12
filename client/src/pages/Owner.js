@@ -4,7 +4,11 @@ import Peer from "peerjs";
 import "./style.css";
 
 const socket = io.connect("http://localhost:3001");
-const peer = new Peer();
+const peer = new Peer(undefined, {
+  path: "/peerjs",
+  host: "/",
+  port: 3001,
+});
 
 const Owner = () => {
   const [callAnswer, updateAnswer] = useState(null);
@@ -20,48 +24,40 @@ const Owner = () => {
     });
   };
 
-  const turnOnTheVideo = () => {
-    navigator.mediaDevices
-      .getUserMedia({ video: true, audio: true })
-      .then((stream) => {
-        addVideoStream(myVideo, stream);
-        peer.on("call", (call) => call.answer(stream));
-        const call = peer.call(peerId, stream);
-        call.on("stream", (userVideoStream) => {
-          addVideoStream(peerVideo, userVideoStream);
-        });
-        call.on("close", () => peerVideo.remove());
-      })
-      .catch((err) => console.log(err));
-  };
   useEffect(() => {
-    socket.emit("newConnection", { roomId: "Room" });
-
-    // store the peer id
     peer.on("open", (id) => {
-      console.log("owner id", id);
+      socket.emit("newConnection", "Room", id);
       updateMyId(id);
-    });
 
-    socket.on("callDeclined", () => {
-      updateAnswer("Call Declined");
-    });
+      socket.on("initiateTheCall", (clientId) => {
+        console.log("Recieved client id", clientId);
+        updatePeerId(clientId);
+        updateAnswer("Call Accepted, Now begin the vide call");
 
-    socket.on("initiateTheCall", ({ id }) => {
-      console.log("Recieved client id", id);
-      updatePeerId(id);
-      updateAnswer("Call Accepted, Now begin the vide call");
+        navigator.mediaDevices
+          .getUserMedia({ video: true, audio: true })
+          .then((stream) => {
+            addVideoStream(myVideo, stream);
+            peer.on("call", (call) => call.answer(stream));
+            console.log(peerId);
+            const call = peer.call(clientId, stream);
+            call.on("stream", (userVideoStream) => {
+              addVideoStream(peerVideo, userVideoStream);
+            });
+            call.on("close", () => peerVideo.remove());
+          })
+          .catch((err) => console.log(err));
+      });
+      socket.on("callDeclined", () => {
+        updateAnswer("Call Declined");
+      });
     });
   }, []);
 
-  useEffect(() => {
-    if (peerId) {
-      turnOnTheVideo();
-    }
-  }, [peerId]);
-
   const makeACall = () => {
-    socket.emit("startCall", { roomId: "Room", id: myId });
+    if (myId) {
+      socket.emit("startCall", { roomId: "Room", id: myId });
+    }
   };
 
   return (
