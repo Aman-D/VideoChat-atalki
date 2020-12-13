@@ -11,7 +11,7 @@ const io = require("socket.io")(http, {
   },
 });
 const cors = require("cors");
-const PORT = 3001;
+const PORT = 3001 || process.env.PORT;
 
 app.use(cors());
 app.use("/peerjs", peerServer);
@@ -60,7 +60,7 @@ io.on("connection", (socket) => {
     socket.to(roomId).broadcast.emit("initiateTheCall", id);
   });
 
-  socket.on("callRejected", ({ roomId }) => {
+  socket.on("callRejected", (roomId) => {
     socket.to(roomId).broadcast.emit("callDeclined");
   });
 
