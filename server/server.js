@@ -70,6 +70,11 @@ io.on("connection", (socket) => {
   socket.on("initialized", ({ roomId }) => {
     socket.to(roomId).broadcast.emit("startVideo");
   });
+
+  socket.on("endCall", (roomId) => {
+    console.log("Call ended on room", roomId);
+    socket.to(roomId).broadcast.emit("callEnded");
+  });
 });
 
 http.listen(PORT, () => {
