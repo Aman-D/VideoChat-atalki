@@ -5,7 +5,7 @@ const { ExpressPeerServer } = require("peer");
 const fs = require("fs");
 const peerServer = ExpressPeerServer(http, {
   debug: false,
-  port: 9000,
+  port: 3001,
   ssl: {
     key: fs.readFileSync("certificates/mykey.key"),
     cert: fs.readFileSync("certificates/mycert.crt"),
